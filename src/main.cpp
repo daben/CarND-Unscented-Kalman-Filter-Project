@@ -14,27 +14,27 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using std::vector;
 
-void check_arguments(int argc, char* argv[]) {
-  string usage_instructions = "Usage instructions: ";
-  usage_instructions += argv[0];
-  usage_instructions += " path/to/input.txt output.txt";
+void print_usage(const string &program_name)
+{
+  cerr << "Usage: " << program_name << " [OPTION]... INPUT OUTPUT" << endl
+       << endl
+       << "  INPUT     path to input file." << endl
+       << "  OUTPUT    path to output file." << endl
+       << endl
+       << "Options:" << endl
+       << "  -lidar={yes|no}       Do|don't use LIDAR sensor." << endl
+       << "  -radar={yes|no}       Do|don't use RADAR sensor." << endl
+       << "  -std_a=FLOAT          Stdev for the longitudinal acceleration in m/s^2." << endl
+       << "  -std_yawdd=FLOAT      Stdev for the the yaw acceleration in rad/s^2." << endl
+       << "  -help, --help         Print this message." << endl
+       << endl
+  ;
+}
 
-  bool has_valid_args = false;
-
-  // make sure the user has provided input and output files
-  if (argc == 1) {
-    cerr << usage_instructions << endl;
-  } else if (argc == 2) {
-    cerr << "Please include an output file.\n" << usage_instructions << endl;
-  } else if (argc == 3) {
-    has_valid_args = true;
-  } else if (argc > 3) {
-    cerr << "Too many arguments.\n" << usage_instructions << endl;
-  }
-
-  if (!has_valid_args) {
-    exit(EXIT_FAILURE);
-  }
+void exit_with_usage(const string &program_name, int exit_code)
+{
+  print_usage(program_name);
+  exit(exit_code);
 }
 
 void check_files(ifstream& in_file, string& in_name,
@@ -52,12 +52,62 @@ void check_files(ifstream& in_file, string& in_name,
 
 int main(int argc, char* argv[]) {
 
-  check_arguments(argc, argv);
-
-  string in_file_name_ = argv[1];
+  string in_file_name_;
+  string out_file_name_;
+  bool use_laser_ = true;
+  bool use_radar_ = true;
+  float std_a_ = -1;
+  float std_yawdd_ = -1;
+  
+  // Parse arguments
+  for (int i = 1; i < argc; i++) {
+    if (argv[i][0] == '-') {
+      if (!strcmp(argv[i], "-help") || !strcmp(argv[i], "--help"))
+        exit_with_usage(argv[0], 0);
+      else if (!strcmp(argv[i], "-lidar=no"))
+        use_laser_ = false;
+      else if (!strcmp(argv[i], "-lidar=yes"))
+        use_laser_ = true;
+      else if (!strcmp(argv[i], "-radar=no"))
+        use_radar_ = false;
+      else if (!strcmp(argv[i], "-radar=yes"))
+        use_radar_ = true;
+      else if (!strncmp(argv[i], "-std_a=", 7)) {
+        std_a_ = strtof(argv[i]+7, nullptr);
+        if (!std::isfinite(std_a_) || std_a_ < 0) {
+          cerr << "Invalid value for std_a" << endl;
+          exit(EXIT_FAILURE);
+        }
+      }
+      else if (!strncmp(argv[i], "-std_yawdd=", 11)) {
+        std_yawdd_ = strtof(argv[i]+11, nullptr);
+        if (!std::isfinite(std_yawdd_) || std_yawdd_ < 0) {
+          cerr << "Invalid value for std_yawdd" << endl;
+          exit(EXIT_FAILURE);
+        }
+      }
+      else {
+        cerr << "Unknown option: " << argv[i] << endl;
+        exit_with_usage(argv[0], EXIT_FAILURE);
+      }
+    } else {
+      if (in_file_name_.empty())
+        in_file_name_ = argv[i];
+      else if (out_file_name_.empty())
+        out_file_name_ = argv[i];
+      else {
+        cerr << "Too many arguments." << endl;
+        exit_with_usage(argv[0], EXIT_FAILURE);
+      }
+    }
+  }
+  
+  if (in_file_name_.empty() || out_file_name_.empty()) {
+    cerr << "Input and/or output file missing." << endl;
+    exit(EXIT_FAILURE);
+  }
+  
   ifstream in_file_(in_file_name_.c_str(), ifstream::in);
-
-  string out_file_name_ = argv[2];
   ofstream out_file_(out_file_name_.c_str(), ofstream::out);
 
   check_files(in_file_, in_file_name_, out_file_, out_file_name_);
@@ -131,6 +181,22 @@ int main(int argc, char* argv[]) {
 
   // Create a UKF instance
   UKF ukf;
+  ukf.use_laser_ = use_laser_;
+  ukf.use_radar_ = use_radar_;
+  
+  if (std_a_ > 0)
+    ukf.std_a_ = std_a_;
+  
+  if (std_yawdd_ > 0)
+    ukf.std_yawdd_ = std_yawdd_;
+  
+  cerr << "UKF" << endl;
+  cerr << "Sensors:" << endl;
+  cerr << "- LIDAR " << (ukf.use_laser_ ? "ON" : "OFF") << endl;
+  cerr << "- RADAR " << (ukf.use_radar_ ? "ON" : "OFF") << endl;
+  cerr << "Process noise:" << endl;
+  cerr << "- std_a = " << ukf.std_a_ << endl;
+  cerr << "- std_yawdd = " << ukf.std_yawdd_ << endl;
 
   // used to compute the RMSE later
   vector<VectorXd> estimations;
@@ -160,7 +226,8 @@ int main(int argc, char* argv[]) {
 
   for (size_t k = 0; k < number_of_measurements; ++k) {
     // Call the UKF-based fusion
-    ukf.ProcessMeasurement(measurement_pack_list[k]);
+    if (!ukf.ProcessMeasurement(measurement_pack_list[k]))
+      continue;
 
     // timestamp
     out_file_ << measurement_pack_list[k].timestamp_ << "\t"; // pos1 - est

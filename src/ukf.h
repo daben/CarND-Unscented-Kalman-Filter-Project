@@ -73,7 +73,19 @@ public:
 
   ///* the current NIS for laser
   double NIS_laser_;
+  
+  ///* Measurement matrix for laser
+  MatrixXd H_laser_;
+  
+  ///* Measurement covariance matrix for laser
+  MatrixXd R_laser_;
+  
+  ///* Measurement covariance matrix for radar
+  MatrixXd R_radar_;
 
+  ///* Identity matrix in state space (n_x_, n_x_)
+  MatrixXd I_;
+  
   /**
    * Constructor
    */
@@ -88,7 +100,7 @@ public:
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
    */
-  void ProcessMeasurement(MeasurementPackage meas_package);
+  bool ProcessMeasurement(MeasurementPackage meas_package);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
