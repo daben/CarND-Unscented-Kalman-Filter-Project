@@ -56,9 +56,6 @@ public:
   ///* Radar measurement noise standard deviation radius change in m/s
   double std_radrd_ ;
 
-  ///* Weights of sigma points
-  VectorXd weights_;
-
   ///* State dimension
   int n_x_;
 
@@ -67,6 +64,12 @@ public:
 
   ///* Sigma point spreading parameter
   double lambda_;
+
+  ///* Weights of sigma points for the mean
+  VectorXd weights_M_;
+  ///* Weights of sigma points for the covariance
+  VectorXd weights_C_;
+  
 
   ///* the current NIS for radar
   double NIS_radar_;
@@ -86,6 +89,9 @@ public:
   ///* Identity matrix in state space (n_x_, n_x_)
   MatrixXd I_;
   
+  ///* Integration timestep
+  double timestep_;
+
   /**
    * Constructor
    */

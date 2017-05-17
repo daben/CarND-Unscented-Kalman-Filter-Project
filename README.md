@@ -1,5 +1,39 @@
-# Unscented Kalman Filter Project Starter Code
+# Unscented Kalman Filter Project
 Self-Driving Car Engineer Nanodegree Program
+
+---
+
+The goal of this project is to apply the Unscented Kalman Filter to fuse data from LIDAR and Radar sensors. 
+
+This repository is a fork of the [original project starter code](https://github.com/udacity/CarND-Unscented-Kalman-Filter-Project).
+
+
+## Contents
+
+| Folder/File | Description | 
+|:------------|:------------|
+| **src**  | source code for the UKF in C++. |
+| **data** | input datasets. |
+| **data**/obj_pose-laser-radar-synthetic-input.txt | is the new project dataset. The expected RMSE should be less or equal than .09, .10, .40, .30.
+| **results** | Outputs, logs and visualization images. |
+| **results**/plot_nis.py | Python script to plot the NIS. |
+
+## Results
+
+These are the results for the following values of the process noise parameters:
+	
+	std_a_ = 0.5; // m/s^2
+	std_yawdd_ = 0.8; // rad/s^2
+
+### obj_pose-laser-radar-synthetic-input.txt:
+
+*RMSE*: 0.0607772, 0.0868509,  0.322878,  0.229244 <= .09, .10, .40, .30.
+
+![](results/obj_pose-laser-radar-synthetic-output.png)
+
+NIS plots:
+
+![](results/obj_pose-laser-radar-synthetic-output-nis.png)
 
 ---
 

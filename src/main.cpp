@@ -190,13 +190,12 @@ int main(int argc, char* argv[]) {
   if (std_yawdd_ > 0)
     ukf.std_yawdd_ = std_yawdd_;
   
-  cerr << "UKF" << endl;
-  cerr << "Sensors:" << endl;
-  cerr << "- LIDAR " << (ukf.use_laser_ ? "ON" : "OFF") << endl;
-  cerr << "- RADAR " << (ukf.use_radar_ ? "ON" : "OFF") << endl;
-  cerr << "Process noise:" << endl;
-  cerr << "- std_a = " << ukf.std_a_ << endl;
-  cerr << "- std_yawdd = " << ukf.std_yawdd_ << endl;
+  cerr << "UKF:"
+       << " [ LIDAR " << (ukf.use_laser_ ? "ON" : "OFF")
+       << " | RADAR " << (ukf.use_radar_ ? "ON" : "OFF")
+       << " | std_a = " << ukf.std_a_
+       << " | std_yawdd = " << ukf.std_yawdd_
+       << " ]" << endl;
 
   // used to compute the RMSE later
   vector<VectorXd> estimations;
@@ -288,7 +287,7 @@ int main(int argc, char* argv[]) {
 
   // compute the accuracy (RMSE)
   Tools tools;
-  cout << "RMSE" << endl << tools.CalculateRMSE(estimations, ground_truth) << endl;
+  cout << "RMSE: " << tools.CalculateRMSE(estimations, ground_truth).transpose() << endl;
 
   // close files
   if (out_file_.is_open()) {
@@ -299,6 +298,6 @@ int main(int argc, char* argv[]) {
     in_file_.close();
   }
 
-  cout << "Done!" << endl;
+  //cout << "Done!" << endl;
   return 0;
 }
